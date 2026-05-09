@@ -343,9 +343,17 @@ def gmail_send(args):
         for path_str in args.attachments.split(","):
             path = Path(path_str).expanduser().resolve()
             if path.exists():
+                # Extract the original filename, removing any KB-internal prefixes like 'doc_xxxx_'
+                original_filename = path.name
+                if original_filename.startswith("doc_") and "_" in original_filename[4:]:
+                    # Pattern: doc_<hex>_<actual_name>.pdf -> <actual_name>.pdf
+                    parts = original_filename.split("_", 2)
+                    if len(parts) > 2:
+                        original_filename = parts[2]
+
                 with open(path, "rb") as f:
                     part = MIMEApplication(f.read())
-                    part.add_header("Content-Disposition", "attachment", filename=path.name)
+                    part.add_header("Content-Disposition", "attachment", filename=original_filename)
                     message.attach(part)
             else:
                 print(f"Warning: Attachment not found: {path_str}", file=sys.stderr)
